@@ -25,6 +25,23 @@ npm start
 http://localhost:3000
 ```
 
+## 測試
+
+單元測試：
+
+```bash
+npm test
+```
+
+完整 3 回合瀏覽器試玩測試：
+
+```bash
+node scripts/three-round-playtest.js
+```
+
+這個測試會自動建立 3 間拼圖房、用房號進入、完成拼圖並確認暗號詞出現。
+執行這個測試需要本機有 Playwright 與 Chrome 或 Edge；一般部署到 Render 不需要 Playwright。
+
 ## Render 部署
 
 1. 把這個資料夾上傳到 GitHub。

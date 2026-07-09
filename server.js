@@ -3,10 +3,9 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
-const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
-const DATA_DIR = path.join(ROOT, "data");
+const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, "data");
 const ROOMS_FILE = path.join(DATA_DIR, "rooms.json");
 const MAX_BODY_BYTES = 16 * 1024 * 1024;
 
@@ -217,20 +216,34 @@ function serveStatic(req, res, url) {
   });
 }
 
-const server = http.createServer((req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+function createServer() {
+  return http.createServer((req, res) => {
+    const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
-  if (url.pathname.startsWith("/api/")) {
-    handleApi(req, res, url).catch(() => {
-      sendJson(res, 500, { error: "伺服器發生錯誤。" });
-    });
-    return;
-  }
+    if (url.pathname.startsWith("/api/")) {
+      handleApi(req, res, url).catch(() => {
+        sendJson(res, 500, { error: "伺服器發生錯誤。" });
+      });
+      return;
+    }
 
-  serveStatic(req, res, url);
-});
+    serveStatic(req, res, url);
+  });
+}
 
-ensureStore();
-server.listen(PORT, () => {
-  console.log(`Puzzle room game is running on port ${PORT}`);
-});
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  ensureStore();
+  createServer().listen(PORT, () => {
+    console.log(`Puzzle room game is running on port ${PORT}`);
+  });
+}
+
+module.exports = {
+  createServer,
+  makeRoomCode,
+  validateRoomInput,
+  readRooms,
+  writeRooms,
+  ensureStore
+};
