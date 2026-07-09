@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>小U0拼圖闖關</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section id="homeView" class="view active">
+        <div class="masthead">
+          <div class="brand-badge">小U0遊戲室</div>
+          <div class="hero-copy">
+            <p class="eyebrow">Lavender Puzzle Party</p>
+            <h1>小U0拼圖闖關</h1>
+            <p class="lead">上傳一張圖片，變成可分享的拼圖房。朋友輸入房號闖關，完成後才會看到你的秘密暗號詞。</p>
+          </div>
+        </div>
+
+        <div class="split">
+          <form id="hostForm" class="panel host-panel">
+            <div class="panel-title">
+              <span>建立拼圖房</span>
+              <small>關主用</small>
+            </div>
+
+            <label>
+              <span>關卡名稱</span>
+              <input id="titleInput" type="text" maxlength="40" placeholder="例如：小U0週末挑戰" />
+            </label>
+
+            <label>
+              <span>上傳圖片</span>
+              <input id="imageInput" type="file" accept="image/*" required />
+            </label>
+
+            <div class="preview-shell">
+              <img id="imagePreview" alt="圖片預覽" />
+              <span id="previewEmpty">圖片預覽</span>
+            </div>
+
+            <label>
+              <span>難度</span>
+              <select id="difficultyInput">
+                <option value="3">暖身 3 x 3</option>
+                <option value="4" selected>剛剛好 4 x 4</option>
+                <option value="5">有點難 5 x 5</option>
+                <option value="6">高手場 6 x 6</option>
+                <option value="8">超級挑戰 8 x 8</option>
+              </select>
+            </label>
+
+            <label>
+              <span>時間限制</span>
+              <select id="timeModeInput">
+                <option value="0">不限時</option>
+                <option value="180">3 分鐘</option>
+                <option value="300">5 分鐘</option>
+                <option value="600">10 分鐘</option>
+                <option value="custom">自訂</option>
+              </select>
+            </label>
+
+            <label id="customTimeWrap" class="hidden">
+              <span>自訂秒數</span>
+              <input id="customTimeInput" type="number" min="10" max="7200" value="300" />
+            </label>
+
+            <label>
+              <span>破關暗號詞</span>
+              <input id="secretInput" type="text" maxlength="80" placeholder="例如：薰衣草奶茶" required />
+            </label>
+
+            <button class="primary" type="submit">開一間拼圖房</button>
+            <p id="hostMessage" class="message"></p>
+          </form>
+
+          <form id="joinForm" class="panel join-panel">
+            <div class="panel-title">
+              <span>進入挑戰</span>
+              <small>闖關者用</small>
+            </div>
+
+            <div class="join-illustration" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+
+            <label>
+              <span>房號</span>
+              <input id="roomCodeInput" type="text" maxlength="8" placeholder="輸入關主分享的房號" required />
+            </label>
+
+            <button class="secondary" type="submit">開始拼圖</button>
+            <p id="joinMessage" class="message"></p>
+          </form>
+        </div>
+      </section>
+
+      <section id="createdView" class="view">
+        <div class="result-panel">
+          <p class="eyebrow">房間開好囉</p>
+          <h2 id="createdCode">------</h2>
+          <p>把房號貼到社群，朋友輸入後就能進入自己的拼圖挑戰。</p>
+          <div class="actions">
+            <button id="copyCodeBtn" class="primary" type="button">複製房號</button>
+            <button id="createAnotherBtn" class="ghost" type="button">再開一間</button>
+          </div>
+          <p id="copyMessage" class="message"></p>
+        </div>
+      </section>
+
+      <section id="gameView" class="view">
+        <header class="game-bar">
+          <div>
+            <p class="eyebrow" id="gameRoomCode">ROOM</p>
+            <h2 id="gameTitle">小U0拼圖闖關</h2>
+          </div>
+          <div class="stats">
+            <div>
+              <span>步數</span>
+              <strong id="moveCount">0</strong>
+            </div>
+            <div>
+              <span>時間</span>
+              <strong id="timerText">不限時</strong>
+            </div>
+          </div>
+        </header>
+
+        <div class="game-layout">
+          <div id="puzzleBoard" class="puzzle-board" aria-label="拼圖區"></div>
+          <aside class="side-panel">
+            <img id="referenceImage" alt="原圖參考" />
+            <div class="actions vertical">
+              <button id="shuffleBtn" class="secondary" type="button">重新打散</button>
+              <button id="backHomeBtn" class="ghost" type="button">回首頁</button>
+            </div>
+            <p id="gameMessage" class="message"></p>
+          </aside>
+        </div>
+      </section>
+
+      <dialog id="winDialog">
+        <div class="dialog-body">
+          <p class="eyebrow">闖關成功</p>
+          <h2>暗號詞</h2>
+          <div id="secretWord" class="secret-word"></div>
+          <div class="actions">
+            <button id="copySecretBtn" class="primary" type="button">複製暗號詞</button>
+            <button id="closeWinBtn" class="ghost" type="button">關閉</button>
+          </div>
+          <p id="secretCopyMessage" class="message"></p>
+        </div>
+      </dialog>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

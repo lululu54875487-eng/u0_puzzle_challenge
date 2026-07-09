@@ -1,0 +1,20 @@
+{
+  "name": "u0-puzzle-challenge",
+  "version": "1.0.0",
+  "description": "小U0拼圖闖關：薰衣草紫色社群拼圖房遊戲。",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "puzzle",
+    "game",
+    "social",
+    "render"
+  ],
+  "author": "",
+  "license": "MIT"
+}
