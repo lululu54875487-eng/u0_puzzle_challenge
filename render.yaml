@@ -1,7 +1,5 @@
-services:
-  - type: web
-    name: u0-puzzle-challenge
-    env: node
-    plan: free
-    buildCommand: ""
-    startCommand: "npm start"
+node_modules/
+data/
+*.zip
+.env
+.DS_Store
