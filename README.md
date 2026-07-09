@@ -1,95 +1,57 @@
-process.env.DATA_DIR = require("node:fs").mkdtempSync(
-  require("node:path").join(require("node:os").tmpdir(), "u0-puzzle-test-")
-);
+# 小U0拼圖闖關
 
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const { createServer, makeRoomCode, validateRoomInput, readRooms } = require("../server");
+薰衣草紫色風格的社群拼圖闖關小遊戲。關主上傳圖片建立拼圖房，設定難度、限時與破關暗號詞；闖關者輸入房號後會進入自己的拼圖畫面，完成後才會看到暗號詞。
 
-const SAMPLE_IMAGE =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/l4NfYQAAAABJRU5ErkJggg==";
+## 功能
 
-function listen(server) {
-  return new Promise((resolve) => {
-    server.listen(0, "127.0.0.1", () => {
-      const { port } = server.address();
-      resolve(`http://127.0.0.1:${port}`);
-    });
-  });
-}
+- 關主上傳圖片，自動切成拼圖並打散
+- 可設定 3x3、4x4、5x5、6x6、8x8 難度
+- 可設定不限時、3 分鐘、5 分鐘、10 分鐘或自訂秒數
+- 建立後產生房號，關主可複製到社群
+- 闖關者輸入房號進入個人拼圖，不會看到其他玩家進度
+- 完成拼圖後顯示關主設定的暗號詞
 
-test("makeRoomCode returns a unique six-character room code", () => {
-  const code = makeRoomCode({ ABC123: {} });
-  assert.match(code, /^[A-Z2-9]{6}$/);
-  assert.notEqual(code, "ABC123");
-});
+## 本機執行
 
-test("validateRoomInput accepts a valid room", () => {
-  const result = validateRoomInput({
-    title: "  測試房  ",
-    secret: "薰衣草暗號",
-    imageData: SAMPLE_IMAGE,
-    difficulty: "4",
-    timeLimit: "300"
-  });
+需要 Node.js 18 以上。
 
-  assert.equal(result.error, undefined);
-  assert.equal(result.value.title, "測試房");
-  assert.equal(result.value.secret, "薰衣草暗號");
-  assert.equal(result.value.difficulty, 4);
-  assert.equal(result.value.timeLimit, 300);
-});
+```bash
+npm start
+```
 
-test("validateRoomInput rejects missing data", () => {
-  assert.match(validateRoomInput({}).error, /暗號詞/);
-  assert.match(
-    validateRoomInput({ secret: "ok", imageData: SAMPLE_IMAGE, difficulty: 9, timeLimit: 0 }).error,
-    /難度/
-  );
-  assert.match(
-    validateRoomInput({ secret: "ok", imageData: "not-image", difficulty: 3, timeLimit: 0 }).error,
-    /圖片/
-  );
-});
+開啟：
 
-test("rooms API creates and returns a room", async () => {
-  const server = createServer();
-  const baseUrl = await listen(server);
-  test.after(() => server.close());
+```text
+http://localhost:3000
+```
 
-  const createResponse = await fetch(`${baseUrl}/api/rooms`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      title: "API 測試房",
-      secret: "API暗號",
-      imageData: SAMPLE_IMAGE,
-      difficulty: 3,
-      timeLimit: 0
-    })
-  });
+## 測試
 
-  assert.equal(createResponse.status, 201);
-  const created = await createResponse.json();
-  assert.match(created.code, /^[A-Z2-9]{6}$/);
+單元測試：
 
-  const getResponse = await fetch(`${baseUrl}/api/rooms/${created.code.toLowerCase()}`);
-  assert.equal(getResponse.status, 200);
-  const room = await getResponse.json();
-  assert.equal(room.code, created.code);
-  assert.equal(room.title, "API 測試房");
-  assert.equal(room.secret, "API暗號");
-  assert.equal(room.difficulty, 3);
+```bash
+npm test
+```
 
-  const rooms = readRooms();
-  assert.ok(rooms[created.code]);
-});
+完整 3 回合瀏覽器試玩測試：
 
-test("rooms API returns 404 for an unknown room", async () => {
-  const server = createServer();
-  const baseUrl = await listen(server);
-  test.after(() => server.close());
+```bash
+node scripts/three-round-playtest.js
+```
 
-  const response = await fetch(`${baseUrl}/api/rooms/NOPE99`);
-  assert.equal(response.status, 404);
-});
+這個測試會自動建立 3 間拼圖房、用房號進入、完成拼圖並確認暗號詞出現。
+執行這個測試需要本機有 Playwright 與 Chrome 或 Edge；一般部署到 Render 不需要 Playwright。
+
+## Render 部署
+
+1. 把這個資料夾上傳到 GitHub。
+2. 在 Render 建立 Web Service。
+3. 選擇該 GitHub repo。
+4. Render 會讀取 `render.yaml`，或手動設定：
+   - Environment: `Node`
+   - Build Command: 留空
+   - Start Command: `npm start`
+
+## 注意
+
+目前版本使用檔案 `data/rooms.json` 儲存房間。Render 免費方案的磁碟可能會在服務重啟後清空資料；如果之後需要長期保存房間，可以再接 PostgreSQL、Redis 或外部物件儲存。
