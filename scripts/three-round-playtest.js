@@ -13,9 +13,9 @@ const SAMPLE_IMAGE_BYTES = Buffer.from(
 );
 
 const rounds = [
-  { title: "第一回合", difficulty: "3", timeMode: "0", secret: "第一回合暗號" },
-  { title: "第二回合", difficulty: "4", timeMode: "180", secret: "第二回合暗號" },
-  { title: "第三回合", difficulty: "5", timeMode: "custom", customTime: "600", secret: "第三回合暗號" }
+  { title: "低難度回合", difficulty: "2", timeMode: "0", secret: "低難度暗號" },
+  { title: "中難度回合", difficulty: "3", timeMode: "180", secret: "中難度暗號" },
+  { title: "高難度回合", difficulty: "4", timeMode: "custom", customTime: "600", secret: "高難度暗號" }
 ];
 
 function findBrowserExecutable() {

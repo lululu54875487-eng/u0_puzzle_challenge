@@ -53,7 +53,7 @@ function listen(server) {
     await page.goto(baseUrl);
     await page.fill("#titleInput", "壓力測試");
     await page.setInputFiles("#imageInput", imagePath);
-    await page.selectOption("#difficultyInput", "5");
+    await page.selectOption("#difficultyInput", "4");
     await page.selectOption("#timeModeInput", "0");
     await page.fill("#secretInput", "壓力測試暗號");
     await page.click("#hostForm button[type='submit']");
@@ -65,9 +65,9 @@ function listen(server) {
     await page.click("#joinForm button[type='submit']");
     await page.waitForSelector("#gameView.active .tile");
 
-    for (let i = 0; i < 180; i += 1) {
-      const from = i % 25;
-      const to = (i * 7 + 3) % 25;
+    for (let i = 0; i < 140; i += 1) {
+      const from = i % 16;
+      const to = (i * 7 + 3) % 16;
       await page.locator(".tile").nth(from).click();
       await page.locator(".tile").nth(to).click();
     }
@@ -82,7 +82,7 @@ function listen(server) {
     if (pageErrors.length) {
       throw new Error(`Page errors: ${pageErrors.join(" | ")}`);
     }
-    if (state.tileCount !== 25 || state.moveCount < 170 || state.activeView !== "gameView") {
+    if (state.tileCount !== 16 || state.moveCount < 130 || state.activeView !== "gameView") {
       throw new Error(`Unexpected puzzle state: ${JSON.stringify(state)}`);
     }
 

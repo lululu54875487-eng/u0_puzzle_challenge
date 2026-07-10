@@ -108,8 +108,8 @@ function validateRoomInput(input) {
     return { error: "暗號詞必須介於 1 到 80 字之間。" };
   }
 
-  if (!Number.isInteger(difficulty) || difficulty < 2 || difficulty > 8) {
-    return { error: "難度必須是 2 到 8 之間。" };
+  if (!Number.isInteger(difficulty) || difficulty < 2 || difficulty > 4) {
+    return { error: "難度必須是 2 到 4 之間。" };
   }
 
   if (!Number.isInteger(timeLimit) || timeLimit < 0 || timeLimit > 7200) {

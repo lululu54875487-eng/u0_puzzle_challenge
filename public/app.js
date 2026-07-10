@@ -47,6 +47,22 @@ let timerId = null;
 let remainingSeconds = 0;
 let gameLocked = false;
 let puzzleImageUrl = "";
+let hintLevelShown = 0;
+
+const MOVE_HINTS = {
+  2: [
+    { moves: 8, text: "小提示：先找角落的位置，2x2 很快就能完成。" },
+    { moves: 14, text: "再試試把兩格互換，觀察原圖的方向和邊緣。" }
+  ],
+  3: [
+    { moves: 22, text: "小提示：先完成第一排或四個角落，會比較好拼。" },
+    { moves: 36, text: "可以看右側原圖，從顏色最明顯的區塊開始交換。" }
+  ],
+  4: [
+    { moves: 45, text: "小提示：高難度建議先拼外框，再處理中間區塊。" },
+    { moves: 70, text: "別急，先鎖定一個角落，把相鄰顏色慢慢排回去。" }
+  ]
+};
 
 function showView(name) {
   Object.values(views).forEach((view) => view.classList.remove("active"));
@@ -239,7 +255,16 @@ function swapTiles(fromIndex, toIndex) {
   moveCount.textContent = String(moves);
   updateTileElement(fromIndex);
   updateTileElement(toIndex);
+  showMoveHintIfNeeded();
   checkWin();
+}
+
+function showMoveHintIfNeeded() {
+  const hints = MOVE_HINTS[currentRoom?.difficulty] || [];
+  const nextHint = hints[hintLevelShown];
+  if (!nextHint || moves < nextHint.moves) return;
+  hintLevelShown += 1;
+  setMessage(gameMessage, nextHint.text);
 }
 
 function checkWin() {
@@ -284,9 +309,10 @@ function startGame(room) {
   pointerMoved = false;
   suppressNextClick = false;
   moves = 0;
+  hintLevelShown = 0;
   gameLocked = false;
   moveCount.textContent = "0";
-  gameMessage.textContent = "";
+  setMessage(gameMessage, "移動拼圖格來交換位置；步數太多時會出現小提示。");
   referenceImage.src = room.imageData;
   setPuzzleImage(room.imageData);
   gameRoomCode.textContent = `房號 ${room.code}`;
@@ -467,9 +493,10 @@ shuffleBtn.addEventListener("click", () => {
   pointerMoved = false;
   suppressNextClick = false;
   moves = 0;
+  hintLevelShown = 0;
   gameLocked = false;
   moveCount.textContent = "0";
-  setMessage(gameMessage, "");
+  setMessage(gameMessage, "已重新打散，試著先從角落開始。");
   buildBoard();
   startTimer();
 });
