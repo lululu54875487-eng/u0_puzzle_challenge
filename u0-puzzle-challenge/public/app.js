@@ -302,8 +302,8 @@ joinForm.addEventListener("submit", async (event) => {
 });
 
 copyCodeBtn.addEventListener("click", async () => {
-  const invitationMessage = `現在打開小u0拼圖🧩遊戲連結，輸入這個房號：${createdCode.textContent}
-就可以開始挑戰囉！💕`;
+  const invitationMessage = `現在打開小u0拼圖🧩遊戲連結，到畫面最下方輸入這個房號：${createdCode.textContent}
+就可以開始挑戰拼圖🧩遊戲囉！💕拼完會有暗號詞唷💕`;
   await navigator.clipboard.writeText(invitationMessage);
   setMessage(copyMessage, "已複製邀請訊息。");
 });
