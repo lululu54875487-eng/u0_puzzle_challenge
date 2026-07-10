@@ -15,7 +15,8 @@ const SAMPLE_IMAGE_BYTES = Buffer.from(
 const rounds = [
   { title: "低難度回合", difficulty: "2", timeMode: "0", secret: "低難度暗號" },
   { title: "中難度回合", difficulty: "3", timeMode: "180", secret: "中難度暗號" },
-  { title: "高難度回合", difficulty: "4", timeMode: "custom", customTime: "600", secret: "高難度暗號" }
+  { title: "高難度回合", difficulty: "4", timeMode: "custom", customTime: "600", secret: "高難度暗號" },
+  { title: "魔王級回合", difficulty: "5", timeMode: "custom", customTime: "900", secret: "魔王級暗號" }
 ];
 
 function findBrowserExecutable() {

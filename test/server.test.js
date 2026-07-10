@@ -43,7 +43,7 @@ test("validateRoomInput accepts a valid room", () => {
 test("validateRoomInput rejects missing data", () => {
   assert.match(validateRoomInput({}).error, /暗號詞/);
   assert.match(
-    validateRoomInput({ secret: "ok", imageData: SAMPLE_IMAGE, difficulty: 5, timeLimit: 0 }).error,
+    validateRoomInput({ secret: "ok", imageData: SAMPLE_IMAGE, difficulty: 6, timeLimit: 0 }).error,
     /難度/
   );
   assert.match(
