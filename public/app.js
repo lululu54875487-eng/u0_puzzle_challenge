@@ -475,8 +475,10 @@ joinForm.addEventListener("submit", async (event) => {
 });
 
 copyCodeBtn.addEventListener("click", async () => {
-  await navigator.clipboard.writeText(createdCode.textContent);
-  setMessage(copyMessage, "已複製房號。");
+  const invitationMessage = `現在打開小u0拼圖🧩遊戲連結，輸入這個房號：${createdCode.textContent}
+就可以開始挑戰囉！💕`;
+  await navigator.clipboard.writeText(invitationMessage);
+  setMessage(copyMessage, "已複製邀請訊息。");
 });
 
 createAnotherBtn.addEventListener("click", () => {
@@ -511,11 +513,8 @@ backHomeBtn.addEventListener("click", () => {
 });
 
 copySecretBtn.addEventListener("click", async () => {
-  const invitationMessage = `現在打開小u0拼圖🧩遊戲連結，輸入這個房號：${currentRoom.code}
-就可以開始挑戰囉！💕`;
-  
-  await navigator.clipboard.writeText(invitationMessage);
-  setMessage(secretCopyMessage, "已複製邀請訊息。");
+  await navigator.clipboard.writeText(secretWord.textContent);
+  setMessage(secretCopyMessage, "已複製暗號詞。");
 });
 
 closeWinBtn.addEventListener("click", () => {
