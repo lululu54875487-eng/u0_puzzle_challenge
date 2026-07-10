@@ -39,10 +39,14 @@ let currentRoom = null;
 let tiles = [];
 let selectedIndex = null;
 let draggedIndex = null;
+let pointerStartIndex = null;
+let pointerMoved = false;
+let suppressNextClick = false;
 let moves = 0;
 let timerId = null;
 let remainingSeconds = 0;
 let gameLocked = false;
+let puzzleImageUrl = "";
 
 function showView(name) {
   Object.values(views).forEach((view) => view.classList.remove("active"));
@@ -61,6 +65,31 @@ function fileToDataUrl(file) {
     reader.onerror = () => reject(new Error("READ_FAILED"));
     reader.readAsDataURL(file);
   });
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("IMAGE_LOAD_FAILED"));
+    image.src = src;
+  });
+}
+
+async function resizeImageDataUrl(dataUrl, maxSize = 1400, quality = 0.86) {
+  const image = await loadImage(dataUrl);
+  const scale = Math.min(1, maxSize / Math.max(image.naturalWidth, image.naturalHeight));
+
+  if (scale >= 1 && dataUrl.length < 3 * 1024 * 1024) {
+    return dataUrl;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const context = canvas.getContext("2d", { alpha: false });
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", quality);
 }
 
 function formatTime(seconds) {
@@ -97,69 +126,110 @@ function makeShuffledTiles(size) {
   return shuffled;
 }
 
-function renderBoard() {
+function dataUrlToObjectUrl(dataUrl) {
+  try {
+    const [header, base64] = dataUrl.split(",");
+    const mime = header.match(/data:(.*?);base64/)?.[1] || "image/png";
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return URL.createObjectURL(new Blob([bytes], { type: mime }));
+  } catch {
+    return dataUrl;
+  }
+}
+
+function setPuzzleImage(imageData) {
+  if (puzzleImageUrl && puzzleImageUrl.startsWith("blob:")) {
+    URL.revokeObjectURL(puzzleImageUrl);
+  }
+  puzzleImageUrl = dataUrlToObjectUrl(imageData);
+  puzzleBoard.style.setProperty("--puzzle-image", `url("${puzzleImageUrl}")`);
+}
+
+function getTilePosition(tileValue, size) {
+  const row = Math.floor(tileValue / size);
+  const col = tileValue % size;
+  return {
+    x: size === 1 ? 0 : (col / (size - 1)) * 100,
+    y: size === 1 ? 0 : (row / (size - 1)) * 100
+  };
+}
+
+function updateTileElement(boardIndex) {
+  const tile = puzzleBoard.children[boardIndex];
+  if (!tile || !currentRoom) return;
+
+  const size = currentRoom.difficulty;
+  const tileValue = tiles[boardIndex];
+  const position = getTilePosition(tileValue, size);
+
+  tile.dataset.index = String(boardIndex);
+  tile.dataset.value = String(tileValue);
+  tile.style.backgroundSize = `${size * 100}% ${size * 100}%`;
+  tile.style.backgroundPosition = `${position.x}% ${position.y}%`;
+  tile.classList.toggle("selected", selectedIndex === boardIndex);
+  tile.draggable = !gameLocked;
+  tile.setAttribute("aria-label", `拼圖第 ${boardIndex + 1} 格`);
+}
+
+function updateAllTiles() {
+  for (let i = 0; i < tiles.length; i += 1) {
+    updateTileElement(i);
+  }
+}
+
+function buildBoard() {
   if (!currentRoom) return;
 
   const size = currentRoom.difficulty;
   puzzleBoard.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
   puzzleBoard.innerHTML = "";
 
-  tiles.forEach((tileValue, boardIndex) => {
+  const fragment = document.createDocumentFragment();
+  for (let i = 0; i < tiles.length; i += 1) {
     const tile = document.createElement("button");
     tile.type = "button";
     tile.className = "tile";
-    tile.draggable = !gameLocked;
-    tile.dataset.index = String(boardIndex);
-    tile.setAttribute("aria-label", `拼圖第 ${boardIndex + 1} 格`);
+    fragment.appendChild(tile);
+  }
+  puzzleBoard.appendChild(fragment);
+  updateAllTiles();
+}
 
-    const row = Math.floor(tileValue / size);
-    const col = tileValue % size;
-    tile.style.backgroundImage = `url("${currentRoom.imageData}")`;
-    tile.style.backgroundSize = `${size * 100}% ${size * 100}%`;
-    tile.style.backgroundPosition = `${(col / (size - 1)) * 100}% ${(row / (size - 1)) * 100}%`;
-
-    if (selectedIndex === boardIndex) tile.classList.add("selected");
-
-    tile.addEventListener("click", () => handleTileClick(boardIndex));
-    tile.addEventListener("dragstart", (event) => {
-      if (gameLocked) return;
-      draggedIndex = boardIndex;
-      tile.classList.add("dragging");
-      event.dataTransfer.effectAllowed = "move";
-    });
-    tile.addEventListener("dragend", () => {
-      draggedIndex = null;
-      tile.classList.remove("dragging");
-    });
-    tile.addEventListener("dragover", (event) => {
-      if (!gameLocked) event.preventDefault();
-    });
-    tile.addEventListener("drop", (event) => {
-      event.preventDefault();
-      if (draggedIndex !== null) swapTiles(draggedIndex, boardIndex);
-    });
-
-    puzzleBoard.appendChild(tile);
-  });
+function getTileIndexFromEventTarget(target) {
+  const tile = target.closest?.(".tile");
+  if (!tile || !puzzleBoard.contains(tile)) return null;
+  return Number.parseInt(tile.dataset.index, 10);
 }
 
 function handleTileClick(index) {
-  if (gameLocked) return;
+  if (gameLocked || !Number.isInteger(index)) return;
+
+  if (suppressNextClick) {
+    suppressNextClick = false;
+    return;
+  }
 
   if (selectedIndex === null) {
     selectedIndex = index;
-    renderBoard();
+    updateTileElement(index);
     return;
   }
 
   if (selectedIndex === index) {
+    const previousIndex = selectedIndex;
     selectedIndex = null;
-    renderBoard();
+    updateTileElement(previousIndex);
     return;
   }
 
-  swapTiles(selectedIndex, index);
+  const previousIndex = selectedIndex;
   selectedIndex = null;
+  updateTileElement(previousIndex);
+  swapTiles(previousIndex, index);
 }
 
 function swapTiles(fromIndex, toIndex) {
@@ -167,7 +237,8 @@ function swapTiles(fromIndex, toIndex) {
   [tiles[fromIndex], tiles[toIndex]] = [tiles[toIndex], tiles[fromIndex]];
   moves += 1;
   moveCount.textContent = String(moves);
-  renderBoard();
+  updateTileElement(fromIndex);
+  updateTileElement(toIndex);
   checkWin();
 }
 
@@ -177,6 +248,7 @@ function checkWin() {
 
   gameLocked = true;
   clearInterval(timerId);
+  updateAllTiles();
   secretWord.textContent = currentRoom.secret;
   secretCopyMessage.textContent = "";
   winDialog.showModal();
@@ -196,8 +268,9 @@ function startTimer() {
     if (remainingSeconds <= 0) {
       clearInterval(timerId);
       gameLocked = true;
+      selectedIndex = null;
       setMessage(gameMessage, "時間到，這次挑戰失敗。可以重新打散再挑戰一次。", true);
-      renderBoard();
+      updateAllTiles();
     }
   }, 1000);
 }
@@ -207,15 +280,19 @@ function startGame(room) {
   tiles = makeShuffledTiles(room.difficulty);
   selectedIndex = null;
   draggedIndex = null;
+  pointerStartIndex = null;
+  pointerMoved = false;
+  suppressNextClick = false;
   moves = 0;
   gameLocked = false;
   moveCount.textContent = "0";
   gameMessage.textContent = "";
   referenceImage.src = room.imageData;
+  setPuzzleImage(room.imageData);
   gameRoomCode.textContent = `房號 ${room.code}`;
   gameTitle.textContent = room.title || "小U0拼圖闖關";
   showView("game");
-  renderBoard();
+  buildBoard();
   startTimer();
 }
 
@@ -225,6 +302,71 @@ async function fetchRoom(code) {
   if (!response.ok) throw new Error(payload.error || "讀取房間失敗。");
   return payload;
 }
+
+puzzleBoard.addEventListener("click", (event) => {
+  const index = getTileIndexFromEventTarget(event.target);
+  if (index !== null) handleTileClick(index);
+});
+
+puzzleBoard.addEventListener("dragstart", (event) => {
+  const index = getTileIndexFromEventTarget(event.target);
+  if (gameLocked || index === null) {
+    event.preventDefault();
+    return;
+  }
+  draggedIndex = index;
+  event.target.classList.add("dragging");
+  event.dataTransfer.effectAllowed = "move";
+});
+
+puzzleBoard.addEventListener("dragend", (event) => {
+  draggedIndex = null;
+  event.target.classList.remove("dragging");
+});
+
+puzzleBoard.addEventListener("dragover", (event) => {
+  if (!gameLocked) event.preventDefault();
+});
+
+puzzleBoard.addEventListener("drop", (event) => {
+  event.preventDefault();
+  const index = getTileIndexFromEventTarget(event.target);
+  if (draggedIndex !== null && index !== null) {
+    selectedIndex = null;
+    swapTiles(draggedIndex, index);
+  }
+});
+
+puzzleBoard.addEventListener("pointerdown", (event) => {
+  const index = getTileIndexFromEventTarget(event.target);
+  if (gameLocked || index === null) return;
+  pointerStartIndex = index;
+  pointerMoved = false;
+});
+
+puzzleBoard.addEventListener("pointermove", () => {
+  if (pointerStartIndex !== null) pointerMoved = true;
+});
+
+puzzleBoard.addEventListener("pointerup", (event) => {
+  if (gameLocked || pointerStartIndex === null) return;
+
+  const target = document.elementFromPoint(event.clientX, event.clientY);
+  const endIndex = getTileIndexFromEventTarget(target);
+  if (pointerMoved && endIndex !== null && endIndex !== pointerStartIndex) {
+    selectedIndex = null;
+    suppressNextClick = true;
+    swapTiles(pointerStartIndex, endIndex);
+  }
+
+  pointerStartIndex = null;
+  pointerMoved = false;
+});
+
+puzzleBoard.addEventListener("pointercancel", () => {
+  pointerStartIndex = null;
+  pointerMoved = false;
+});
 
 imageInput.addEventListener("change", async () => {
   const file = imageInput.files[0];
@@ -239,7 +381,8 @@ imageInput.addEventListener("change", async () => {
   }
 
   try {
-    uploadedImageData = await fileToDataUrl(file);
+    const originalImageData = await fileToDataUrl(file);
+    uploadedImageData = await resizeImageDataUrl(originalImageData);
     imagePreview.src = uploadedImageData;
     previewShell.classList.add("has-image");
     setMessage(hostMessage, "");
@@ -319,11 +462,15 @@ shuffleBtn.addEventListener("click", () => {
   if (!currentRoom) return;
   tiles = makeShuffledTiles(currentRoom.difficulty);
   selectedIndex = null;
+  draggedIndex = null;
+  pointerStartIndex = null;
+  pointerMoved = false;
+  suppressNextClick = false;
   moves = 0;
   gameLocked = false;
   moveCount.textContent = "0";
   setMessage(gameMessage, "");
-  renderBoard();
+  buildBoard();
   startTimer();
 });
 

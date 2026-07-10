@@ -11,6 +11,10 @@
 - 闖關者輸入房號進入個人拼圖，不會看到其他玩家進度
 - 完成拼圖後顯示關主設定的暗號詞
 
+## 操作優化
+
+新版拼圖盤已改成「格子只建立一次，交換時只更新兩格」，避免每移動一次就重建整個拼圖盤。圖片上傳時也會自動壓縮到適合遊戲的尺寸，讓手機和瀏覽器操作更順。
+
 ## 社群介紹文
 
 可直接複製貼上的社群介紹文字放在 [`SOCIAL_POST.md`](SOCIAL_POST.md)。
@@ -43,8 +47,13 @@ npm test
 node scripts/three-round-playtest.js
 ```
 
-這個測試會自動建立 3 間拼圖房、用房號進入、完成拼圖並確認暗號詞出現。
-執行這個測試需要本機有 Playwright 與 Chrome 或 Edge；一般部署到 Render 不需要 Playwright。
+拼圖移動壓力測試：
+
+```bash
+node scripts/movement-stress-test.js
+```
+
+瀏覽器試玩與壓力測試需要本機有 Playwright 與 Chrome 或 Edge；一般部署到 Render 不需要 Playwright。
 
 ## Render 部署
 
