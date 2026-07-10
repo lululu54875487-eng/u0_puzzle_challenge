@@ -511,8 +511,11 @@ backHomeBtn.addEventListener("click", () => {
 });
 
 copySecretBtn.addEventListener("click", async () => {
-  await navigator.clipboard.writeText(secretWord.textContent);
-  setMessage(secretCopyMessage, "已複製暗號詞。");
+  const invitationMessage = `現在打開小u0拼圖🧩遊戲連結，輸入這個房號：${currentRoom.code}
+就可以開始挑戰囉！💕`;
+  
+  await navigator.clipboard.writeText(invitationMessage);
+  setMessage(secretCopyMessage, "已複製邀請訊息。");
 });
 
 closeWinBtn.addEventListener("click", () => {
