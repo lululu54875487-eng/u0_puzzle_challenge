@@ -35,6 +35,7 @@ const closeWinBtn = document.querySelector("#closeWinBtn");
 const secretCopyMessage = document.querySelector("#secretCopyMessage");
 
 let uploadedImageData = "";
+let createdRoomTitle = "";
 let currentRoom = null;
 let tiles = [];
 let selectedIndex = null;
@@ -257,8 +258,9 @@ hostForm.addEventListener("submit", async (event) => {
   setMessage(hostMessage, "建立中...");
 
   const timeLimit = getTimeLimit();
+  const title = document.querySelector("#titleInput").value;
   const payload = {
-    title: document.querySelector("#titleInput").value,
+    title: title,
     imageData: uploadedImageData,
     difficulty: document.querySelector("#difficultyInput").value,
     timeLimit,
@@ -279,6 +281,7 @@ hostForm.addEventListener("submit", async (event) => {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "建立失敗。");
     createdCode.textContent = result.code;
+    createdRoomTitle = title;
     showView("created");
     setMessage(copyMessage, "");
   } catch (error) {
@@ -302,8 +305,7 @@ joinForm.addEventListener("submit", async (event) => {
 });
 
 copyCodeBtn.addEventListener("click", async () => {
-  const invitationMessage = `現在打開小u0拼圖🧩遊戲連結，到畫面最下方輸入這個房號：${createdCode.textContent}
-就可以開始挑戰拼圖🧩遊戲囉！💕拼完會有暗號詞唷💕`;
+  const invitationMessage = `現在打開小u0拼圖🧩遊戲連結，到畫面最下方輸入房號就可以開始挑戰拼圖🧩遊戲囉！💕拼完會有暗號詞唷💕房間名稱：${createdRoomTitle}          房號：${createdCode.textContent}`;
   await navigator.clipboard.writeText(invitationMessage);
   setMessage(copyMessage, "已複製邀請訊息。");
 });
